@@ -1,8 +1,8 @@
 // Service worker Toko Pertanian MEKAR INDAH: membuat aplikasi bisa dibuka tanpa internet.
 // Naikkan angka versi ini setiap kali Anda mengunggah index.html baru.
-const CACHE = "mekarindah-v2";
+const CACHE = "mekarindah-v3";
 const CORE = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-maskable-512.png"];
-const CDN = ["cdn.tailwindcss.com", "fonts.googleapis.com", "fonts.gstatic.com"];
+const CDN = ["cdn.tailwindcss.com", "fonts.googleapis.com", "fonts.gstatic.com", "www.gstatic.com"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting()));
