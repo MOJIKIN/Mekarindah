@@ -1,0 +1,16 @@
+{
+  "name": "Toko Pertanian MEKAR INDAH",
+  "short_name": "MEKAR INDAH",
+  "description": "Kasir dan manajemen gudang Toko Pertanian MEKAR INDAH",
+  "lang": "id",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
