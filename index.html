@@ -2228,5 +2228,28 @@ document.addEventListener("keydown", e => {
   if (e.key === "Enter" && !$("pay-modal").classList.contains("hidden") && payMethod === "Tunai" && !$("cash-pay-btn").disabled) confirmCash();
 });
 </script>
+	<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyD97UkolBFN-x27qR-OKQr4ApTOHcDQvjo",
+    authDomain: "toko-pertanian-mekar-indah.firebaseapp.com",
+    projectId: "toko-pertanian-mekar-indah",
+    storageBucket: "toko-pertanian-mekar-indah.firebasestorage.app",
+    messagingSenderId: "809056551073",
+    appId: "1:809056551073:web:bd411136fb34de316c30e0",
+    measurementId: "G-KWJHXFHGFG"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+	</script>
 </body>
 </html>
