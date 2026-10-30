@@ -54,6 +54,7 @@
       <img src="icon-192.png" alt="" class="w-16 h-16 mx-auto rounded-2xl">
       <h1 class="font-bold text-lg text-slate-900">MEKAR INDAH</h1>
       <p class="text-xs text-slate-500">Toko Pertanian · Masuk untuk membuka kasir dan gudang</p>
+      <p class="text-[11px] text-slate-400">Bantuan: <a href="tel:085257202622" class="font-semibold text-slate-500">085257202622</a></p>
     </div>
     <div id="login-loading" class="text-center text-xs text-slate-400 py-4">Memuat…</div>
     <form id="login-form" class="hidden space-y-3 text-xs" onsubmit="doLogin(event)">
@@ -231,6 +232,10 @@
           <label for="set-address" class="block font-medium text-slate-600 mb-1">Alamat</label>
           <input type="text" id="set-address" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:bg-white">
         </div>
+        <div>
+          <label for="set-phone" class="block font-medium text-slate-600 mb-1">Nomor Telepon / WA</label>
+          <input type="tel" id="set-phone" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:bg-white">
+        </div>
       </div>
       <div class="text-xs">
         <label for="set-qris" class="block font-medium text-slate-600 mb-1">Kode QRIS Toko (teks)</label>
@@ -399,6 +404,28 @@
   </div>
 </div>
 
+<!-- ============ MODAL: DETAIL PRODUK ============ -->
+<div id="detail-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4" onclick="if(event.target===this)closeProductDetail()">
+  <div class="bg-white rounded-3xl max-w-md w-full p-5 space-y-3 shadow-2xl max-h-[95vh] overflow-y-auto">
+    <div class="flex justify-between items-start gap-3">
+      <div class="min-w-0">
+        <p id="det-sku" class="text-[11px] font-semibold text-slate-400 break-all"></p>
+        <h3 id="det-name" class="font-bold text-base text-slate-900 leading-snug"></h3>
+      </div>
+      <button onclick="closeProductDetail()" aria-label="Tutup" class="text-slate-400 hover:text-slate-700 shrink-0"><svg class="ic" data-i="x" viewBox="0 0 24 24" aria-hidden="true"></svg></button>
+    </div>
+    <div id="det-photo" class="w-full aspect-[4/3] rounded-2xl bg-slate-100 overflow-hidden flex items-center justify-center text-slate-300"></div>
+    <p id="det-price" class="text-xl font-bold text-indigo-600 tabular"></p>
+    <p id="det-desc" class="text-xs text-slate-600 leading-relaxed whitespace-pre-line"></p>
+    <div class="grid grid-cols-2 gap-2 text-xs">
+      <div class="bg-slate-50 rounded-xl p-3"><p class="text-slate-400">Stok</p><p id="det-stock" class="font-bold text-slate-800 tabular"></p></div>
+      <div class="bg-slate-50 rounded-xl p-3"><p class="text-slate-400">Lokasi rak</p><p id="det-rack" class="font-bold text-slate-800"></p></div>
+    </div>
+    <p id="det-contact" class="text-[11px] text-slate-400"></p>
+    <button id="det-add" onclick="detailAdd()" class="w-full py-3 bg-indigo-600 text-white hover:bg-indigo-700 rounded-xl text-xs font-semibold transition disabled:bg-slate-300 disabled:cursor-not-allowed">Tambah ke keranjang</button>
+  </div>
+</div>
+
 <!-- ============ MODAL: SCAN ============ -->
 <div id="scan-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
   <div class="bg-white rounded-3xl max-w-md w-full p-5 space-y-3 shadow-2xl max-h-[95vh] overflow-y-auto">
@@ -441,6 +468,21 @@
       <div>
         <label class="block font-medium text-slate-600 mb-1">Nama Produk</label>
         <input type="text" id="form-name" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:bg-white">
+      </div>
+      <div>
+        <label class="block font-medium text-slate-600 mb-1">Foto Produk (opsional)</label>
+        <div class="flex gap-3 items-center">
+          <div id="form-photo-preview" class="w-24 h-24 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center text-slate-300 shrink-0"></div>
+          <div class="flex flex-col gap-2 items-start">
+            <label class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer inline-flex items-center gap-1.5"><svg class="ic" data-i="camera" viewBox="0 0 24 24" aria-hidden="true"></svg> Ambil / pilih foto<input type="file" id="form-photo-file" accept="image/*" class="hidden" onchange="onPhotoPicked(this)"></label>
+            <button type="button" id="form-photo-remove" onclick="setFormPhoto('')" class="hidden text-rose-500 hover:text-rose-700 font-semibold">Hapus foto</button>
+            <p id="form-photo-msg" class="text-slate-400"></p>
+          </div>
+        </div>
+      </div>
+      <div>
+        <label for="form-desc" class="block font-medium text-slate-600 mb-1">Deskripsi singkat (opsional)</label>
+        <textarea id="form-desc" rows="3" maxlength="400" placeholder="Misal: Pupuk NPK 16-16-16, kemasan karung 50 kg, untuk padi dan jagung" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:bg-white"></textarea>
       </div>
       <div class="grid grid-cols-2 gap-2.5">
         <div>
@@ -1752,7 +1794,7 @@ function hydrateIcons(root){
 new MutationObserver(function(){ hydrateIcons(); }).observe(document.body,{childList:true,subtree:true});
 hydrateIcons();
 
-const STORE = { name: 'TOKO PERTANIAN "MEKAR INDAH"', address: "Jl. Contoh No. 1, Surabaya", taxRate: 0.10, lowStock: 5, qris: "" };
+const STORE = { name: 'TOKO PERTANIAN "MEKAR INDAH"', address: "Jl. Contoh No. 1, Surabaya", phone: "085257202622", taxRate: 0.10, lowStock: 5, qris: "" };
 let products = [], transactions = [], logs = [];
 let currentRole = "kasir";
 const loaded = { products: false, transactions: false, logs: false };
@@ -1837,6 +1879,7 @@ function onDBData(kind, data, pending) {
   else if (kind === "settings") {
     if (typeof data.name === "string" && data.name) STORE.name = data.name;
     if (typeof data.address === "string") STORE.address = data.address;
+    if (typeof data.phone === "string" && data.phone) STORE.phone = data.phone;
     STORE.qris = typeof data.qris === "string" ? data.qris : "";
   }
   refreshUI(kind === "settings");
@@ -2050,7 +2093,9 @@ function renderPOSProducts() {
     const inCart = cart[p.sku] || 0;
     const left = p.stock - inCart;
     const out = left <= 0;
+    const ph = safePhoto(p);
     return `<button onclick="addToCart('${p.sku}')" ${out ? "disabled" : ""} class="card-hover text-left bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col gap-1.5 ${out ? "opacity-50 cursor-not-allowed" : ""}">
+      <div class="relative w-full aspect-[4/3] rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center text-slate-300">${ph ? `<img src="${esc(ph)}" alt="" loading="lazy" class="w-full h-full object-cover">` : photoPlaceholder()}<span role="button" tabindex="0" onclick="event.stopPropagation();openProductDetail('${p.sku}')" class="absolute bottom-1.5 right-1.5 px-2 py-1 rounded-lg bg-slate-900/70 text-white text-[10px] font-semibold">Info</span></div>
       <span class="text-[10px] font-semibold text-slate-400">${esc(p.sku)} · ${esc(p.category)}</span>
       <span class="font-semibold text-xs text-slate-800 leading-snug">${esc(p.name)}</span>
       <span class="font-bold text-sm text-indigo-600 tabular">${rp(p.price)}</span>
@@ -2256,7 +2301,7 @@ function receiptHTML(trx) {
   const lines = trx.items.map(i =>
     `<div>${esc(i.name)}</div><div class="row"><span>${i.qty} x ${rp(i.price).replace("Rp ", "")}</span><span>${rp(i.price * i.qty).replace("Rp ", "")}</span></div>`).join("");
   return `<div class="receipt">
-    <div class="c"><b>${esc(STORE.name)}</b><br>${esc(STORE.address)}</div>
+    <div class="c"><b>${esc(STORE.name)}</b><br>${esc(STORE.address)}${STORE.phone ? "<br>Telp/WA: " + esc(STORE.phone) : ""}</div>
     <hr>
     <div class="row"><span>No</span><span>${esc(trx.id)}</span></div>
     <div class="row"><span>Waktu</span><span>${esc(fmtTime(trx.ts))}</span></div>
@@ -2303,6 +2348,7 @@ function receiptLines(trx, measure, maxW) {
   const L = [], num = n => Math.round(n).toLocaleString("id-ID");
   L.push({ k: "c", t: STORE.name, b: true, big: true });
   wrapText(measure, STORE.address, maxW).forEach(t => L.push({ k: "c", t }));
+  if (STORE.phone) L.push({ k: "c", t: "Telp/WA: " + STORE.phone });
   L.push({ k: "hr" });
   L.push({ k: "lr", a: "No", b: trx.id });
   L.push({ k: "lr", a: "Waktu", b: fmtTime(trx.ts) });
@@ -2387,7 +2433,7 @@ function renderGudangTable() {
   const q = $("search-gudang").value.trim().toLowerCase();
   const list = products.filter(p => !q || p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q) || (p.barcode || "").toLowerCase().includes(q) || p.rack.toLowerCase().includes(q));
   $("gudang-table-body").innerHTML = list.length ? list.map(p => `<tr class="hover:bg-slate-50/60">
-    <td class="p-4"><p class="font-semibold text-slate-800">${esc(p.name)}</p><p class="text-slate-400 text-[11px]">${esc(p.sku)}${p.barcode ? " · " + esc(p.barcode) : ""}</p></td>
+    <td class="p-4"><button onclick="openProductDetail('${p.sku}')" class="flex items-center gap-3 text-left"><span class="w-12 h-12 rounded-lg bg-slate-100 overflow-hidden flex items-center justify-center text-slate-300 shrink-0">${safePhoto(p) ? `<img src="${esc(safePhoto(p))}" alt="" loading="lazy" class="w-full h-full object-cover">` : photoPlaceholder("text-base")}</span><span><span class="block font-semibold text-slate-800">${esc(p.name)}</span><span class="block text-slate-400 text-[11px]">${esc(p.sku)}${p.barcode ? " · " + esc(p.barcode) : ""}</span></span></button></td>
     <td class="p-4 text-slate-600">${esc(p.category)}</td>
     <td class="p-4 text-slate-600"><svg class="ic text-slate-300 mr-1" data-i="pin" viewBox="0 0 24 24" aria-hidden="true"></svg>${esc(p.rack)}</td>
     <td class="p-4 font-bold text-slate-800 tabular">${p.stock}</td>
@@ -2445,10 +2491,10 @@ function scanToCart(code) {
   const p = findByCode(code);
   if (!p) return { ok: false, msg: "Kode " + code + " belum terdaftar" };
   const n = cart[p.sku] || 0;
-  if (n >= p.stock) return { ok: false, msg: p.name + ": stok tidak cukup" };
+  if (n >= p.stock) return { ok: false, msg: p.name + ": stok tidak cukup", p };
   cart[p.sku] = n + 1;
   renderCart(); renderPOSProducts();
-  return { ok: true, msg: p.name + " ditambahkan (" + (n + 1) + " di keranjang)" };
+  return { ok: true, msg: p.name + " ditambahkan (" + (n + 1) + " di keranjang)", p };
 }
 let audioCtx = null;
 function beep(ok) {
@@ -2487,8 +2533,8 @@ function updateScanCart() {
   $("scan-cart-total").textContent = rp(totals().total);
 }
 function showScanFeedback(r) {
-  const el = $("scan-feedback");
-  el.textContent = (r.ok ? "✓ " : "✗ ") + r.msg;
+  const el = $("scan-feedback"), p = r.p, ph = safePhoto(p);
+  el.innerHTML = `<div class="flex gap-3 items-center">${ph ? `<img src="${esc(ph)}" alt="" class="w-24 h-24 rounded-lg object-cover shrink-0 bg-white">` : ""}<div class="min-w-0"><p>${r.ok ? "✓ " : "✗ "}${esc(r.msg)}</p>${p ? `${p.desc ? `<p class="font-normal mt-1 opacity-80 leading-snug">${esc(p.desc)}</p>` : ""}<p class="mt-1 tabular">${rp(p.price)} · stok ${p.stock}</p>` : ""}</div></div>`;
   el.className = "text-xs font-semibold rounded-xl px-3 py-2.5 " + (r.ok ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-600");
 }
 async function openScanner(mode) {
@@ -2545,7 +2591,7 @@ function handleCode(raw) {
     const p = findByCode(code);
     beep(!!p); closeScanner();
     $("search-gudang").value = p ? p.sku : code; renderGudangTable();
-    toast(p ? p.name : "Kode " + code + " belum terdaftar. Isi kolom Barcode di Admin, Ubah produk.");
+    if (p) openProductDetail(p.sku); else toast("Kode " + code + " belum terdaftar. Isi kolom Barcode di Admin, Ubah produk.");
     return;
   }
   const r = scanToCart(code);
@@ -2566,7 +2612,7 @@ $("search-pos").addEventListener("keydown", e => {
     e.target.value = ""; renderPOSProducts();
   }
 });
-const SCREENS = ["pay-modal", "receipt-modal", "stock-modal", "scan-modal", "product-modal", "login-screen", "role-screen"];
+const SCREENS = ["pay-modal", "receipt-modal", "stock-modal", "scan-modal", "product-modal", "detail-modal", "login-screen", "role-screen"];
 let wedgeBuf = "", wedgeAt = 0;
 document.addEventListener("keydown", e => {
   const tag = e.target && e.target.tagName;
@@ -2594,7 +2640,7 @@ function renderAdmin() {
 
   $("admin-product-tbody").innerHTML = !products.length ? `<tr><td colspan="7" class="p-8 text-center text-slate-400">${emptyMsg()}</td></tr>` : products.map(p => `<tr class="hover:bg-slate-50/60">
     <td class="p-3.5 text-slate-500">${esc(p.sku)}</td>
-    <td class="p-3.5 font-semibold text-slate-800">${esc(p.name)}</td>
+    <td class="p-3.5 font-semibold text-slate-800"><div class="flex items-center gap-2.5"><span class="w-9 h-9 rounded-lg bg-slate-100 overflow-hidden flex items-center justify-center text-slate-300 shrink-0">${safePhoto(p) ? `<img src="${esc(safePhoto(p))}" alt="" loading="lazy" class="w-full h-full object-cover">` : photoPlaceholder("text-sm")}</span>${esc(p.name)}</div></td>
     <td class="p-3.5 text-slate-600">${esc(p.category)}</td>
     <td class="p-3.5 tabular">${rp(p.price)}</td>
     <td class="p-3.5 tabular">${p.stock}</td>
@@ -2615,6 +2661,7 @@ function renderAdmin() {
 function renderSettings() {
   $("set-name").value = STORE.name;
   $("set-address").value = STORE.address;
+  $("set-phone").value = STORE.phone;
   $("set-qris").value = STORE.qris;
   showQrisStatus(STORE.qris ? qrisCheck(STORE.qris) : null);
 }
@@ -2639,8 +2686,9 @@ function saveSettings() {
   }
   const name = $("set-name").value.trim() || STORE.name;
   const address = $("set-address").value.trim();
-  STORE.name = name; STORE.address = address; STORE.qris = qris;
-  DB.saveSettings({ name, address, qris }).catch(ex => toast("Pengaturan gagal tersimpan: " + dbMsg(ex)));
+  const phone = $("set-phone").value.trim().slice(0, 30) || STORE.phone;
+  STORE.name = name; STORE.address = address; STORE.phone = phone; STORE.qris = qris;
+  DB.saveSettings({ name, address, phone, qris }).catch(ex => toast("Pengaturan gagal tersimpan: " + dbMsg(ex)));
   toast("Pengaturan disimpan");
 }
 function clearQRIS() {
@@ -2649,9 +2697,85 @@ function clearQRIS() {
   DB.saveSettings({ qris: "" }).catch(ex => toast("Gagal menghapus QRIS: " + dbMsg(ex)));
   toast("QRIS dihapus");
 }
+/* ---------- Foto & detail produk ---------- */
+let formPhoto = "", photoBusy = false, detailSku = null;
+const safePhoto = p => (p && typeof p.photo === "string" && p.photo.startsWith("data:image/")) ? p.photo : (typeof p === "string" && p.startsWith("data:image/") ? p : "");
+const photoPlaceholder = size => `<svg class="ic ${size || "text-2xl"}" data-i="package" viewBox="0 0 24 24" aria-hidden="true"></svg>`;
+// Foto diperkecil dan dimampatkan di perangkat supaya muat di dokumen Firestore (maks sekitar 160 KB)
+function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const MAX_CHARS = 220000;
+      for (const dim of [1000, 800, 640, 480]) {
+        const s = Math.min(1, dim / Math.max(img.width, img.height));
+        const c = document.createElement("canvas");
+        c.width = Math.max(1, Math.round(img.width * s)); c.height = Math.max(1, Math.round(img.height * s));
+        const ctx = c.getContext("2d");
+        ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        for (let q = 0.85; q >= 0.5; q -= 0.1) {
+          const out = c.toDataURL("image/jpeg", q);
+          if (out.length <= MAX_CHARS) return resolve(out);
+        }
+      }
+      reject(new Error("toobig"));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("bad")); };
+    img.src = url;
+  });
+}
+function setFormPhoto(v) {
+  formPhoto = v || "";
+  $("form-photo-preview").innerHTML = formPhoto
+    ? `<img src="${esc(formPhoto)}" alt="" class="w-full h-full object-cover">`
+    : `<svg class="ic text-2xl" data-i="camera" viewBox="0 0 24 24" aria-hidden="true"></svg>`;
+  $("form-photo-remove").classList.toggle("hidden", !formPhoto);
+  $("form-photo-msg").textContent = "";
+}
+async function onPhotoPicked(input) {
+  const f = input.files && input.files[0];
+  input.value = "";
+  if (!f) return;
+  const msg = $("form-photo-msg");
+  photoBusy = true; msg.textContent = "Memproses foto…";
+  try {
+    const data = await compressImage(f);
+    setFormPhoto(data);
+    msg.textContent = "Foto siap (" + Math.round(data.length * 0.75 / 1024) + " KB)";
+  } catch (ex) {
+    msg.textContent = "Foto tidak bisa dibaca. Coba foto lain.";
+  } finally { photoBusy = false; }
+}
+function openProductDetail(sku) {
+  const p = findP(sku); if (!p) return;
+  detailSku = sku;
+  const ph = safePhoto(p);
+  $("det-sku").textContent = p.sku + " · " + p.category + (p.barcode ? " · " + p.barcode : "");
+  $("det-name").textContent = p.name;
+  $("det-photo").innerHTML = ph ? `<img src="${esc(ph)}" alt="" class="w-full h-full object-contain">` : photoPlaceholder("text-4xl");
+  $("det-price").textContent = rp(p.price);
+  $("det-desc").textContent = p.desc || "Belum ada deskripsi.";
+  $("det-stock").textContent = p.stock + (p.stock <= 0 ? " (habis)" : "");
+  $("det-rack").textContent = p.rack || "-";
+  $("det-contact").innerHTML = STORE.phone ? `Tanya produk: <a href="tel:${esc(STORE.phone)}" class="font-semibold text-slate-500">${esc(STORE.phone)}</a>` : "";
+  const add = $("det-add");
+  add.classList.toggle("hidden", currentRole !== "kasir");
+  add.disabled = p.stock <= (cart[sku] || 0);
+  show("detail-modal");
+}
+function closeProductDetail() { hide("detail-modal"); detailSku = null; }
+function detailAdd() {
+  if (!detailSku) return;
+  const sku = detailSku;
+  addToCart(sku);
+  closeProductDetail();
+}
+
 function openAddProductModal() {
   $("modal-title").textContent = "Tambah Produk";
-  $("product-form").reset(); $("form-index").value = "";
+  $("product-form").reset(); $("form-index").value = ""; setFormPhoto("");
   $("form-sku").readOnly = false; $("form-err").classList.add("hidden");
   show("product-modal");
 }
@@ -2662,6 +2786,7 @@ function openEditProductModal(sku) {
   $("form-sku").value = p.sku; $("form-sku").readOnly = true;
   $("form-name").value = p.name; $("form-category").value = p.category; $("form-barcode").value = p.barcode || "";
   $("form-rack").value = p.rack; $("form-price").value = p.price; $("form-stock").value = p.stock;
+  $("form-desc").value = p.desc || ""; setFormPhoto(safePhoto(p));
   $("form-err").classList.add("hidden");
   show("product-modal");
 }
@@ -2671,10 +2796,12 @@ function saveProduct(e) {
   const editing = $("form-index").value;   // kosong = produk baru, selain itu = SKU yang diubah
   const data = {
     sku: $("form-sku").value.trim(), barcode: $("form-barcode").value.trim(), name: $("form-name").value.trim(), category: $("form-category").value,
-    rack: $("form-rack").value.trim(), price: Math.max(0, parseInt($("form-price").value, 10) || 0),
+    rack: $("form-rack").value.trim(), desc: $("form-desc").value.trim().slice(0, 400), photo: formPhoto,
+    price: Math.max(0, parseInt($("form-price").value, 10) || 0),
     stock: Math.max(0, parseInt($("form-stock").value, 10) || 0)
   };
   const fail = m => { $("form-err").textContent = m; $("form-err").classList.remove("hidden"); };
+  if (photoBusy) return fail("Foto masih diproses, tunggu sebentar lalu simpan lagi.");
   if (!window.DB) return fail("Belum tersambung ke database.");
   if (!/^[A-Za-z0-9._\- ]+$/.test(data.sku) || data.sku === "." || data.sku === ".." || data.sku.startsWith("__"))
     return fail("SKU hanya boleh berisi huruf, angka, spasi, titik, strip, dan garis bawah.");
@@ -2691,7 +2818,7 @@ function saveProduct(e) {
     const p = findP(editing);
     if (!p) return fail("Produk ini sudah dihapus dari perangkat lain.");
     // perubahan stok dikirim sebagai selisih supaya penjualan yang masuk bersamaan tidak tertimpa
-    job = DB.updateProduct(editing, { name: data.name, barcode: data.barcode, category: data.category, rack: data.rack, price: data.price }, data.stock - p.stock);
+    job = DB.updateProduct(editing, { name: data.name, barcode: data.barcode, category: data.category, rack: data.rack, price: data.price, desc: data.desc, photo: data.photo }, data.stock - p.stock);
   }
   job.catch(ex => toast("Produk gagal tersimpan: " + dbMsg(ex)));
   closeProductModal(); toast("Produk disimpan");
@@ -2722,7 +2849,7 @@ if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0) {
   window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
 }
 document.addEventListener("keydown", e => {
-  if (e.key === "Escape") { ["pay-modal", "receipt-modal", "stock-modal", "product-modal"].forEach(hide); if (scanMode) closeScanner(); }
+  if (e.key === "Escape") { ["pay-modal", "receipt-modal", "stock-modal", "product-modal", "detail-modal"].forEach(hide); if (scanMode) closeScanner(); }
   if (e.key === "Enter" && !$("pay-modal").classList.contains("hidden") && payMethod === "Tunai" && e.target && e.target.id === "cash-input" && !$("cash-pay-btn").disabled) confirmCash();
 });
 </script>
@@ -2780,7 +2907,7 @@ window.DB = {
 
   createProduct(p) {
     const b = writeBatch(db);
-    b.set(doc(db, "products", p.sku), { sku: p.sku, barcode: p.barcode || "", name: p.name, category: p.category, rack: p.rack, price: p.price, stock: p.stock });
+    b.set(doc(db, "products", p.sku), { sku: p.sku, barcode: p.barcode || "", name: p.name, category: p.category, rack: p.rack, desc: p.desc || "", photo: p.photo || "", price: p.price, stock: p.stock });
     if (p.stock > 0) b.set(logDoc(), { ts: now(), sku: p.sku, name: p.name, type: "Masuk", qty: p.stock, note: "Stok awal" });
     return b.commit();
   },
