@@ -105,8 +105,9 @@
       <div class="flex flex-col sm:flex-row gap-3 justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
         <div class="relative w-full sm:w-72">
           <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400"><svg class="ic text-xs" data-i="search" viewBox="0 0 24 24" aria-hidden="true"></svg></span>
-          <input type="text" id="search-pos" oninput="renderPOSProducts()" placeholder="Cari nama barang / SKU..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500 focus:bg-white transition">
+          <input type="text" id="search-pos" oninput="renderPOSProducts()" placeholder="Cari nama, SKU, atau barcode..." autocomplete="off" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500 focus:bg-white transition">
         </div>
+        <button onclick="openScanner('kasir')" class="w-full sm:w-auto shrink-0 bg-indigo-600 text-white px-4 py-2.5 rounded-xl text-xs font-semibold hover:bg-indigo-700 transition flex items-center justify-center gap-1.5 shadow-sm"><svg class="ic" data-i="barcode" viewBox="0 0 24 24" aria-hidden="true"></svg> Scan barcode</button>
         <div id="category-filters" class="flex gap-1.5 overflow-x-auto w-full sm:w-auto hide-scrollbar"></div>
       </div>
       <div id="pos-product-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3.5 overflow-y-auto lg:max-h-[calc(100vh-280px)] pr-1"></div>
@@ -146,7 +147,7 @@
           <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400"><svg class="ic text-xs" data-i="search" viewBox="0 0 24 24" aria-hidden="true"></svg></span>
           <input type="text" id="search-gudang" oninput="renderGudangTable()" placeholder="Cari barang atau nomor rak..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500 focus:bg-white transition">
         </div>
-        <button onclick="openScannerModal()" class="bg-indigo-600 text-white px-4 py-2.5 rounded-xl text-xs font-semibold hover:bg-indigo-700 transition flex items-center gap-1.5 shadow-sm shrink-0"><svg class="ic" data-i="barcode" viewBox="0 0 24 24" aria-hidden="true"></svg> Scan</button>
+        <button onclick="openScanner('gudang')" class="bg-indigo-600 text-white px-4 py-2.5 rounded-xl text-xs font-semibold hover:bg-indigo-700 transition flex items-center gap-1.5 shadow-sm shrink-0"><svg class="ic" data-i="barcode" viewBox="0 0 24 24" aria-hidden="true"></svg> Scan</button>
       </div>
     </div>
 
@@ -399,15 +400,24 @@
 </div>
 
 <!-- ============ MODAL: SCAN ============ -->
-<div id="scanner-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
-  <div class="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 text-center shadow-2xl">
-    <div class="bg-indigo-50 text-indigo-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto text-xl"><svg class="ic" data-i="camera" viewBox="0 0 24 24" aria-hidden="true"></svg></div>
-    <div>
-      <h3 class="font-bold text-base text-slate-900">Simulasi Scan Barcode</h3>
-      <p class="text-xs text-slate-500 mt-1">Pilih kode barang untuk mensimulasikan pemindaian.</p>
+<div id="scan-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+  <div class="bg-white rounded-3xl max-w-md w-full p-5 space-y-3 shadow-2xl max-h-[95vh] overflow-y-auto">
+    <div class="flex justify-between items-start gap-3">
+      <div>
+        <h3 id="scan-title" class="font-bold text-base text-slate-900"></h3>
+        <p id="scan-hint" class="text-xs text-slate-500 mt-0.5 leading-relaxed"></p>
+      </div>
+      <button onclick="closeScanner()" aria-label="Tutup pemindai" class="text-slate-400 hover:text-slate-700 shrink-0"><svg class="ic" data-i="x" viewBox="0 0 24 24" aria-hidden="true"></svg></button>
     </div>
-    <div id="scanner-list" class="space-y-2 max-h-48 overflow-y-auto text-left pr-1"></div>
-    <button onclick="closeScannerModal()" class="w-full py-2.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl text-xs font-semibold transition">Batal</button>
+    <div id="scan-reader" class="w-full rounded-xl overflow-hidden bg-slate-900 min-h-[200px]"></div>
+    <p id="scan-status" class="text-xs text-slate-500 text-center"></p>
+    <div id="scan-feedback" class="hidden text-xs font-semibold rounded-xl px-3 py-2.5"></div>
+    <div id="scan-cart" class="hidden justify-between items-center text-xs bg-slate-50 rounded-xl px-3 py-2.5">
+      <span id="scan-cart-count" class="text-slate-600"></span>
+      <span id="scan-cart-total" class="font-bold text-slate-900 tabular"></span>
+    </div>
+    <input type="text" id="scan-manual" autocomplete="off" placeholder="Atau ketik / tempel kode lalu tekan Enter" class="w-full p-3 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:bg-white">
+    <button id="scan-done" onclick="closeScanner()" class="w-full py-3 bg-indigo-600 text-white hover:bg-indigo-700 rounded-xl text-xs font-semibold transition">Selesai</button>
   </div>
 </div>
 
@@ -420,6 +430,13 @@
       <div>
         <label class="block font-medium text-slate-600 mb-1">SKU / Kode Barang</label>
         <input type="text" id="form-sku" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:bg-white">
+      </div>
+      <div>
+        <label for="form-barcode" class="block font-medium text-slate-600 mb-1">Barcode (opsional)</label>
+        <div class="flex gap-2">
+          <input type="text" id="form-barcode" maxlength="48" autocomplete="off" placeholder="Scan atau ketik kode di kemasan" onkeydown="if(event.key==='Enter'){event.preventDefault();}" class="flex-grow min-w-0 p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:bg-white">
+          <button type="button" onclick="openScanner('form')" class="shrink-0 px-4 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 font-semibold flex items-center gap-1.5"><svg class="ic" data-i="barcode" viewBox="0 0 24 24" aria-hidden="true"></svg> Scan</button>
+        </div>
       </div>
       <div>
         <label class="block font-medium text-slate-600 mb-1">Nama Produk</label>
@@ -2027,7 +2044,7 @@ function renderPOSProducts() {
   const q = $("search-pos").value.trim().toLowerCase();
   const list = products.filter(p =>
     (currentCategory === "All" || p.category === currentCategory) &&
-    (!q || p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q)));
+    (!q || p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q) || (p.barcode || "").toLowerCase().includes(q)));
   if (!list.length) { $("pos-product-grid").innerHTML = `<p class="col-span-full text-center text-xs text-slate-400 py-10">${emptyMsg()}</p>`; return; }
   $("pos-product-grid").innerHTML = list.map(p => {
     const inCart = cart[p.sku] || 0;
@@ -2368,9 +2385,9 @@ function statusBadge(p) {
 }
 function renderGudangTable() {
   const q = $("search-gudang").value.trim().toLowerCase();
-  const list = products.filter(p => !q || p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q) || p.rack.toLowerCase().includes(q));
+  const list = products.filter(p => !q || p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q) || (p.barcode || "").toLowerCase().includes(q) || p.rack.toLowerCase().includes(q));
   $("gudang-table-body").innerHTML = list.length ? list.map(p => `<tr class="hover:bg-slate-50/60">
-    <td class="p-4"><p class="font-semibold text-slate-800">${esc(p.name)}</p><p class="text-slate-400 text-[11px]">${esc(p.sku)}</p></td>
+    <td class="p-4"><p class="font-semibold text-slate-800">${esc(p.name)}</p><p class="text-slate-400 text-[11px]">${esc(p.sku)}${p.barcode ? " · " + esc(p.barcode) : ""}</p></td>
     <td class="p-4 text-slate-600">${esc(p.category)}</td>
     <td class="p-4 text-slate-600"><svg class="ic text-slate-300 mr-1" data-i="pin" viewBox="0 0 24 24" aria-hidden="true"></svg>${esc(p.rack)}</td>
     <td class="p-4 font-bold text-slate-800 tabular">${p.stock}</td>
@@ -2412,20 +2429,160 @@ function saveStock() {
   toast("Stok " + p.name + " sekarang " + (p.stock + delta));
 }
 
-/* ---------- SCAN (simulasi) ---------- */
-function openScannerModal() {
-  $("scanner-list").innerHTML = products.map(p =>
-    `<button onclick="simulateScan('${p.sku}')" class="w-full flex justify-between items-center p-3 rounded-xl border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/40 text-xs transition">
-      <span class="font-semibold text-slate-700">${esc(p.name)}</span><span class="text-slate-400">${esc(p.sku)}</span></button>`).join("");
-  show("scanner-modal");
+/* ---------- SCAN BARCODE ---------- */
+// Cocokkan kode hasil scan dengan barcode atau SKU produk.
+// Untuk kode angka, nol di depan diabaikan (UPC-A 12 digit sering terbaca sebagai EAN-13 berawalan 0).
+const sameCode = (a, b) => {
+  a = String(a || "").trim().toLowerCase(); b = String(b || "").trim().toLowerCase();
+  if (!a || !b) return false;
+  if (a === b) return true;
+  return /^\d+$/.test(a) && /^\d+$/.test(b) && a.replace(/^0+/, "") === b.replace(/^0+/, "");
+};
+function findByCode(code) {
+  return products.find(p => sameCode(p.barcode, code)) || products.find(p => sameCode(p.sku, code));
 }
-function closeScannerModal() { hide("scanner-modal"); }
-function simulateScan(sku) {
-  closeScannerModal();
-  $("search-gudang").value = sku;
-  renderGudangTable();
-  toast("Barcode terbaca: " + sku);
+function scanToCart(code) {
+  const p = findByCode(code);
+  if (!p) return { ok: false, msg: "Kode " + code + " belum terdaftar" };
+  const n = cart[p.sku] || 0;
+  if (n >= p.stock) return { ok: false, msg: p.name + ": stok tidak cukup" };
+  cart[p.sku] = n + 1;
+  renderCart(); renderPOSProducts();
+  return { ok: true, msg: p.name + " ditambahkan (" + (n + 1) + " di keranjang)" };
 }
+let audioCtx = null;
+function beep(ok) {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.frequency.value = ok ? 1200 : 300; g.gain.value = 0.08;
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + (ok ? 0.08 : 0.25));
+  } catch (e) {}
+  try { if (navigator.vibrate) navigator.vibrate(ok ? 30 : [60, 40, 60]); } catch (e) {}
+}
+
+const SCAN_LIB = "https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js";
+let scanMode = null, scanner = null, scanLibP = null, lastCode = "", lastAt = 0;
+function loadScanLib() {
+  if (window.Html5Qrcode) return Promise.resolve();
+  if (!scanLibP) scanLibP = new Promise((res, rej) => {
+    const s = document.createElement("script");
+    s.src = SCAN_LIB; s.onload = res;
+    s.onerror = () => { scanLibP = null; rej(new Error("scanlib")); };
+    document.head.appendChild(s);
+  });
+  return scanLibP;
+}
+function scanErr(ex) {
+  const t = typeof ex === "string" ? ex : [ex && ex.name, ex && ex.message].filter(Boolean).join(" ");
+  if (/scanlib/.test(t)) return "Pemindai belum bisa dimuat (perlu internet saat pertama kali dipakai). Ketik kodenya di bawah.";
+  if (/NotAllowed|Permission/i.test(t)) return "Izin kamera ditolak. Izinkan kamera untuk situs ini di pengaturan browser, atau ketik kodenya di bawah.";
+  if (/NotFound|Requested device/i.test(t)) return "Kamera tidak ditemukan. Ketik kodenya di bawah.";
+  return "Kamera tidak bisa dibuka (" + t + "). Ketik kodenya di bawah.";
+}
+function updateScanCart() {
+  const n = Object.values(cart).reduce((s, q) => s + q, 0);
+  $("scan-cart-count").textContent = n + " barang di keranjang";
+  $("scan-cart-total").textContent = rp(totals().total);
+}
+function showScanFeedback(r) {
+  const el = $("scan-feedback");
+  el.textContent = (r.ok ? "✓ " : "✗ ") + r.msg;
+  el.className = "text-xs font-semibold rounded-xl px-3 py-2.5 " + (r.ok ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-600");
+}
+async function openScanner(mode) {
+  if (scanMode) return;
+  scanMode = mode; lastCode = ""; lastAt = 0;
+  const T = {
+    kasir: ["Scan barang", "Arahkan kamera ke barcode. Setiap barcode yang terbaca masuk ke keranjang."],
+    gudang: ["Cari barang", "Arahkan kamera ke barcode barang untuk menemukannya di daftar."],
+    form: ["Scan barcode produk", "Arahkan kamera ke barcode di kemasan."]
+  }[mode];
+  $("scan-title").textContent = T[0]; $("scan-hint").textContent = T[1];
+  $("scan-feedback").classList.add("hidden"); $("scan-manual").value = "";
+  $("scan-done").textContent = mode === "kasir" ? "Selesai" : "Batal";
+  if (mode === "kasir") { show("scan-cart"); updateScanCart(); } else hide("scan-cart");
+  $("scan-status").textContent = "Menyiapkan kamera…";
+  show("scan-modal");
+  let s = null;
+  try {
+    await loadScanLib();
+    if (!scanMode) return;
+    const F = Html5QrcodeSupportedFormats;
+    s = new Html5Qrcode("scan-reader", {
+      formatsToSupport: [F.EAN_13, F.EAN_8, F.UPC_A, F.UPC_E, F.CODE_128, F.CODE_39, F.QR_CODE],
+      useBarCodeDetectorIfSupported: true, verbose: false
+    });
+    scanner = s;
+    await s.start({ facingMode: "environment" },
+      { fps: 10, qrbox: (w, h) => ({ width: Math.floor(w * 0.85), height: Math.floor(Math.min(h * 0.6, 180)) }) },
+      onScanned, () => {});
+    if (scanner !== s) { try { await s.stop(); } catch (e) {} return; }   // ditutup saat kamera masih menyala
+    $("scan-status").textContent = "Arahkan kamera ke barcode";
+  } catch (ex) {
+    if (!scanMode) return;
+    $("scan-status").textContent = scanErr(ex);
+  }
+}
+async function closeScanner() {
+  const s = scanner; scanner = null; scanMode = null;
+  hide("scan-modal");
+  if (s) { try { await s.stop(); } catch (e) {} try { s.clear(); } catch (e) {} }
+}
+function onScanned(text) {
+  const now = Date.now();
+  if (text === lastCode && now - lastAt < 1800) return;   // kamera membaca barcode yang sama berkali-kali
+  lastCode = text; lastAt = now;
+  handleCode(text);
+}
+function handleCode(raw) {
+  const code = String(raw || "").trim();
+  if (!code) return;
+  const mode = scanMode;
+  if (mode === "form") { $("form-barcode").value = code; beep(true); closeScanner(); return; }
+  if (mode === "gudang") {
+    const p = findByCode(code);
+    beep(!!p); closeScanner();
+    $("search-gudang").value = p ? p.sku : code; renderGudangTable();
+    toast(p ? p.name : "Kode " + code + " belum terdaftar. Isi kolom Barcode di Admin, Ubah produk.");
+    return;
+  }
+  const r = scanToCart(code);
+  beep(r.ok);
+  if (mode === "kasir") { showScanFeedback(r); updateScanCart(); } else toast(r.msg);
+}
+$("scan-manual").addEventListener("keydown", e => {
+  if (e.key !== "Enter") return;
+  e.preventDefault(); handleCode(e.target.value); e.target.value = "";
+});
+// Scanner barcode USB/Bluetooth mengetik kode lalu menekan Enter, seperti keyboard
+$("search-pos").addEventListener("keydown", e => {
+  if (e.key !== "Enter") return;
+  const v = e.target.value.trim();
+  if (v && findByCode(v)) {
+    e.preventDefault();
+    const r = scanToCart(v); beep(r.ok); toast(r.msg);
+    e.target.value = ""; renderPOSProducts();
+  }
+});
+const SCREENS = ["pay-modal", "receipt-modal", "stock-modal", "scan-modal", "product-modal", "login-screen", "role-screen"];
+let wedgeBuf = "", wedgeAt = 0;
+document.addEventListener("keydown", e => {
+  const tag = e.target && e.target.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (!myRole || currentRole !== "kasir" || SCREENS.some(id => !$(id).classList.contains("hidden"))) return;
+  const now = Date.now();
+  if (e.key === "Enter") {
+    const code = wedgeBuf; wedgeBuf = "";
+    if (code.length >= 4) { e.preventDefault(); handleCode(code); }
+    return;
+  }
+  if (e.key.length === 1) {
+    if (now - wedgeAt > 120) wedgeBuf = "";   // ketikan manusia lebih lambat dari scanner
+    wedgeBuf += e.key; wedgeAt = now;
+  }
+});
 
 /* ---------- ADMIN ---------- */
 function renderAdmin() {
@@ -2503,7 +2660,7 @@ function openEditProductModal(sku) {
   $("modal-title").textContent = "Ubah Produk";
   $("form-index").value = sku;
   $("form-sku").value = p.sku; $("form-sku").readOnly = true;
-  $("form-name").value = p.name; $("form-category").value = p.category;
+  $("form-name").value = p.name; $("form-category").value = p.category; $("form-barcode").value = p.barcode || "";
   $("form-rack").value = p.rack; $("form-price").value = p.price; $("form-stock").value = p.stock;
   $("form-err").classList.add("hidden");
   show("product-modal");
@@ -2513,7 +2670,7 @@ function saveProduct(e) {
   e.preventDefault();
   const editing = $("form-index").value;   // kosong = produk baru, selain itu = SKU yang diubah
   const data = {
-    sku: $("form-sku").value.trim(), name: $("form-name").value.trim(), category: $("form-category").value,
+    sku: $("form-sku").value.trim(), barcode: $("form-barcode").value.trim(), name: $("form-name").value.trim(), category: $("form-category").value,
     rack: $("form-rack").value.trim(), price: Math.max(0, parseInt($("form-price").value, 10) || 0),
     stock: Math.max(0, parseInt($("form-stock").value, 10) || 0)
   };
@@ -2521,6 +2678,11 @@ function saveProduct(e) {
   if (!window.DB) return fail("Belum tersambung ke database.");
   if (!/^[A-Za-z0-9._\- ]+$/.test(data.sku) || data.sku === "." || data.sku === ".." || data.sku.startsWith("__"))
     return fail("SKU hanya boleh berisi huruf, angka, spasi, titik, strip, dan garis bawah.");
+  if (data.barcode) {
+    if (!/^[^\s'"<>\\]{3,48}$/.test(data.barcode)) return fail("Barcode harus 3 sampai 48 karakter dan tanpa spasi.");
+    const dup = products.find(p => p.sku !== editing && sameCode(p.barcode, data.barcode));
+    if (dup) return fail("Barcode ini sudah dipakai produk \"" + dup.name + "\".");
+  }
   let job;
   if (!editing) {
     if (products.some(p => p.sku.toLowerCase() === data.sku.toLowerCase())) return fail("SKU sudah dipakai produk lain.");
@@ -2529,7 +2691,7 @@ function saveProduct(e) {
     const p = findP(editing);
     if (!p) return fail("Produk ini sudah dihapus dari perangkat lain.");
     // perubahan stok dikirim sebagai selisih supaya penjualan yang masuk bersamaan tidak tertimpa
-    job = DB.updateProduct(editing, { name: data.name, category: data.category, rack: data.rack, price: data.price }, data.stock - p.stock);
+    job = DB.updateProduct(editing, { name: data.name, barcode: data.barcode, category: data.category, rack: data.rack, price: data.price }, data.stock - p.stock);
   }
   job.catch(ex => toast("Produk gagal tersimpan: " + dbMsg(ex)));
   closeProductModal(); toast("Produk disimpan");
@@ -2560,7 +2722,7 @@ if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0) {
   window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
 }
 document.addEventListener("keydown", e => {
-  if (e.key === "Escape") ["pay-modal", "receipt-modal", "stock-modal", "scanner-modal", "product-modal"].forEach(hide);
+  if (e.key === "Escape") { ["pay-modal", "receipt-modal", "stock-modal", "product-modal"].forEach(hide); if (scanMode) closeScanner(); }
   if (e.key === "Enter" && !$("pay-modal").classList.contains("hidden") && payMethod === "Tunai" && e.target && e.target.id === "cash-input" && !$("cash-pay-btn").disabled) confirmCash();
 });
 </script>
@@ -2618,7 +2780,7 @@ window.DB = {
 
   createProduct(p) {
     const b = writeBatch(db);
-    b.set(doc(db, "products", p.sku), { sku: p.sku, name: p.name, category: p.category, rack: p.rack, price: p.price, stock: p.stock });
+    b.set(doc(db, "products", p.sku), { sku: p.sku, barcode: p.barcode || "", name: p.name, category: p.category, rack: p.rack, price: p.price, stock: p.stock });
     if (p.stock > 0) b.set(logDoc(), { ts: now(), sku: p.sku, name: p.name, type: "Masuk", qty: p.stock, note: "Stok awal" });
     return b.commit();
   },
