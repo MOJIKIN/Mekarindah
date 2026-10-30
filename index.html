@@ -36,6 +36,17 @@
 </head>
 <body class="flex flex-col min-h-screen">
 
+<!-- ============ PERAN BELUM ADA / AKUN BELUM TERDAFTAR ============ -->
+<div id="role-screen" class="hidden fixed inset-0 z-[75] bg-slate-900 items-center justify-center p-4 overflow-y-auto">
+  <div class="bg-white rounded-3xl max-w-sm w-full p-7 space-y-4 shadow-2xl text-center">
+    <h2 id="role-title" class="font-bold text-lg text-slate-900"></h2>
+    <p id="role-text" class="text-xs text-slate-500 leading-relaxed"></p>
+    <p id="role-who" class="text-xs font-semibold text-slate-700 break-all"></p>
+    <button id="role-claim" onclick="claimOwner()" class="hidden w-full py-3 bg-indigo-600 text-white hover:bg-indigo-700 rounded-xl text-xs font-semibold transition">Jadikan saya pemilik</button>
+    <button onclick="doLogout()" class="w-full py-3 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl text-xs font-semibold transition">Keluar</button>
+  </div>
+</div>
+
 <!-- ============ LOGIN ============ -->
 <div id="login-screen" class="fixed inset-0 z-[80] bg-slate-900 flex items-center justify-center p-4 overflow-y-auto">
   <div class="bg-white rounded-3xl max-w-sm w-full p-7 space-y-5 shadow-2xl">
@@ -183,6 +194,25 @@
       </div>
     </div>
 
+    <div id="report-card" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 space-y-4">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div>
+          <h3 class="font-bold text-base text-slate-800">Laporan Penjualan</h3>
+          <p class="text-xs text-slate-500 mt-0.5">Omzet sudah termasuk pajak. Nilai per produk sebelum pajak.</p>
+        </div>
+        <div class="flex gap-2">
+          <select id="report-period" onchange="loadReport()" class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500">
+            <option value="today">Hari ini</option>
+            <option value="7" selected>7 hari terakhir</option>
+            <option value="30">30 hari terakhir</option>
+            <option value="month">Bulan ini</option>
+          </select>
+          <button onclick="loadReport()" class="px-3 py-2.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">Muat ulang</button>
+        </div>
+      </div>
+      <div id="report-body" class="text-xs"></div>
+    </div>
+
     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 space-y-4">
       <div class="flex items-start gap-3">
         <div class="bg-indigo-50 text-indigo-600 p-2.5 rounded-xl"><svg class="ic text-base" data-i="sliders" viewBox="0 0 24 24" aria-hidden="true"></svg></div>
@@ -211,6 +241,25 @@
         <button onclick="clearQRIS()" class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">Hapus QRIS</button>
         <button onclick="saveSettings()" class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition shadow-md shadow-indigo-600/20">Simpan Pengaturan</button>
       </div>
+    </div>
+
+    <div id="roles-card" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 space-y-4">
+      <div class="flex items-start gap-3">
+        <div class="bg-indigo-50 text-indigo-600 p-2.5 rounded-xl"><svg class="ic text-base" data-i="shield" viewBox="0 0 24 24" aria-hidden="true"></svg></div>
+        <div>
+          <h3 class="font-bold text-base text-slate-800">Akun &amp; Peran</h3>
+          <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">Pemilik bisa membuka semua tab. Kasir hanya bisa membuka Kasir dan Gudang. Buat dulu akunnya di Firebase (Authentication → Users → Add user), lalu daftarkan emailnya di sini.</p>
+        </div>
+      </div>
+      <div id="roles-list" class="divide-y divide-slate-100 text-xs"></div>
+      <div class="flex flex-col sm:flex-row gap-2.5 text-xs">
+        <input type="email" id="role-new-email" placeholder="email@contoh.com" class="flex-grow min-w-0 p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:bg-white">
+        <select id="role-new-type" class="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500">
+          <option value="kasir">Kasir</option><option value="owner">Pemilik</option>
+        </select>
+        <button onclick="addRole()" class="px-4 py-3 rounded-xl font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition">Tambah</button>
+      </div>
+      <p id="roles-err" class="text-xs text-rose-600 hidden"></p>
     </div>
 
     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 space-y-4">
@@ -258,6 +307,16 @@
     <div class="bg-slate-50 rounded-2xl p-4 text-center">
       <p class="text-xs text-slate-500">Total yang harus dibayar</p>
       <p id="pay-total" class="text-2xl font-bold text-indigo-600 mt-1 tabular">Rp 0</p>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+      <div>
+        <label for="pay-customer" class="block font-medium text-slate-600 mb-1">Nama pelanggan (opsional)</label>
+        <input type="text" id="pay-customer" maxlength="60" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:bg-white">
+      </div>
+      <div>
+        <label for="pay-note" class="block font-medium text-slate-600 mb-1">Catatan (opsional)</label>
+        <input type="text" id="pay-note" maxlength="120" placeholder="Misal: kirim ke ladang" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:bg-white">
+      </div>
     </div>
     <div class="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-xl">
       <button id="tab-QRIS" onclick="setPayMethod('QRIS')" class="py-2 rounded-lg text-xs font-semibold"><svg class="ic mr-1" data-i="qr" viewBox="0 0 24 24" aria-hidden="true"></svg> QRIS</button>
@@ -1778,6 +1837,8 @@ function onAuthChange(user) {
     hide("login-screen");
     $("user-email").textContent = user.email || "";
   } else {
+    myRole = null; myEmail = ""; rolesData = { owners: [], kasir: [] };
+    hide("role-screen"); $("user-email").textContent = ""; $("btn-admin").style.display = "none";
     products = []; transactions = []; logs = []; cart = {};
     loaded.products = loaded.transactions = loaded.logs = false;
     Object.keys(pendingFlags).forEach(k => delete pendingFlags[k]);
@@ -1805,8 +1866,143 @@ async function doLogin(e) {
 }
 function doLogout() { if (window.DB) DB.logout(); }
 
+/* ---------- Peran: pemilik dan kasir ---------- */
+let myRole = null, myEmail = "", rolesData = { owners: [], kasir: [] };
+function applyRoleUI() {
+  $("btn-admin").style.display = myRole === "owner" ? "" : "none";
+  if (myRole !== "owner" && currentRole === "admin") switchRole("kasir");
+}
+function onRole(info) {
+  myEmail = info.email || "";
+  if (info.state === "ok") {
+    myRole = info.role; rolesData = { owners: info.owners, kasir: info.kasir };
+    hide("role-screen");
+    $("user-email").textContent = myEmail + " · " + (myRole === "owner" ? "Pemilik" : "Kasir");
+    applyRoleUI();
+    if (currentRole === "admin") renderRoles();
+  } else {
+    myRole = null; applyRoleUI();
+    const unset = info.state === "unset";
+    $("role-title").textContent = unset ? "Atur pemilik toko" : "Akun belum terdaftar";
+    $("role-text").textContent = unset
+      ? "Belum ada pemilik yang terdaftar. Jika ini akun Anda sebagai pemilik toko, tekan tombol di bawah. Lakukan ini sebelum akun dibagikan ke kasir."
+      : "Email ini belum diberi akses. Minta pemilik toko menambahkannya di Admin, bagian Akun & Peran.";
+    $("role-who").textContent = myEmail;
+    $("role-claim").classList.toggle("hidden", !unset);
+    show("role-screen");
+  }
+}
+function claimOwner() {
+  if (!window.DB || !myEmail) return;
+  DB.claimOwner(myEmail).catch(ex => toast("Gagal: " + dbMsg(ex)));
+}
+const EMAIL_RE = /^[^\s@'"<>\\]+@[^\s@'"<>\\]+\.[^\s@'"<>\\]+$/;
+function renderRoles() {
+  const el = $("roles-list"); if (!el) return;
+  const rows = [...rolesData.owners.map(e => ({ e, r: "owner" })), ...rolesData.kasir.map(e => ({ e, r: "kasir" }))];
+  el.innerHTML = rows.map(x => {
+    const self = x.e === myEmail;
+    const canRemove = !self && !(x.r === "owner" && rolesData.owners.length <= 1);
+    return `<div class="py-2.5 flex items-center gap-3">
+      <span class="min-w-0 flex-grow truncate text-slate-700">${esc(x.e)}${self ? " (Anda)" : ""}</span>
+      <span class="px-2.5 py-1 rounded-lg font-semibold ${x.r === "owner" ? "bg-indigo-50 text-indigo-600" : "bg-emerald-50 text-emerald-700"}">${x.r === "owner" ? "Pemilik" : "Kasir"}</span>
+      ${canRemove ? `<button onclick="removeRole('${x.r}','${esc(x.e)}')" class="px-3 py-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 font-semibold">Cabut</button>` : ""}
+    </div>`;
+  }).join("");
+}
+function addRole() {
+  const err = $("roles-err"); err.classList.add("hidden");
+  const fail = m => { err.textContent = m; err.classList.remove("hidden"); };
+  const email = $("role-new-email").value.trim().toLowerCase(), type = $("role-new-type").value;
+  if (!EMAIL_RE.test(email)) return fail("Format email tidak benar.");
+  if (rolesData.owners.includes(email) || rolesData.kasir.includes(email)) return fail("Email ini sudah terdaftar.");
+  DB.addRole(type, email)
+    .then(() => { $("role-new-email").value = ""; toast("Akun ditambahkan"); })
+    .catch(ex => fail("Gagal menambah: " + dbMsg(ex)));
+}
+function removeRole(type, email) {
+  if (!confirm("Cabut akses " + email + "?")) return;
+  DB.removeRole(type, email).then(() => toast("Akses dicabut")).catch(ex => toast("Gagal: " + dbMsg(ex)));
+}
+
+/* ---------- Laporan penjualan (pemilik) ---------- */
+let reportSeq = 0;
+const pad2 = n => String(n).padStart(2, "0");
+const dayKey = ts => { const d = new Date(ts); return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); };
+function reportStart(p) {
+  const d = new Date(); d.setHours(0, 0, 0, 0);
+  if (p === "month") d.setDate(1);
+  else if (p !== "today") d.setDate(d.getDate() - (parseInt(p, 10) - 1));
+  return d.getTime();
+}
+async function loadReport() {
+  const body = $("report-body");
+  if (!body || !window.DB || myRole !== "owner") return;
+  const seq = ++reportSeq;
+  body.innerHTML = `<p class="text-slate-400 py-4">Memuat laporan…</p>`;
+  try {
+    const start = reportStart($("report-period").value);
+    const r = await DB.fetchTransactions(start);
+    if (seq === reportSeq) renderReport(r.rows, r.truncated, start);
+  } catch (ex) {
+    if (seq === reportSeq) body.innerHTML = `<p class="text-rose-600 py-4">Laporan gagal dimuat: ${esc(dbMsg(ex))}</p>`;
+  }
+}
+function renderReport(rows, truncated, start) {
+  const body = $("report-body");
+  if (!rows.length) { body.innerHTML = `<p class="text-slate-400 py-6 text-center">Belum ada transaksi pada periode ini.</p>`; return; }
+  const sum = a => a.reduce((s, t) => s + t.total, 0);
+  const omzet = sum(rows), n = rows.length;
+  const tunai = sum(rows.filter(t => t.method === "Tunai")), qris = sum(rows.filter(t => t.method === "QRIS"));
+  const days = {};
+  for (let d = new Date(start), i = 0; d <= new Date() && i < 40; d.setDate(d.getDate() + 1), i++) days[dayKey(d.getTime())] = { total: 0, n: 0 };
+  rows.forEach(t => { const k = dayKey(t.ts); const o = days[k] = days[k] || { total: 0, n: 0 }; o.total += t.total; o.n++; });
+  const dayList = Object.entries(days).sort((a, b) => a[0] < b[0] ? -1 : 1);
+  const maxDay = Math.max(...dayList.map(([, v]) => v.total), 1);
+  const prod = {};
+  rows.forEach(t => (t.items || []).forEach(i => {
+    const p = prod[i.sku] = prod[i.sku] || { name: i.name, qty: 0, total: 0 };
+    p.qty += i.qty; p.total += i.price * i.qty;
+  }));
+  const top = Object.values(prod).sort((a, b) => b.qty - a.qty || b.total - a.total).slice(0, 10);
+  const tile = (label, val, sub) => `<div class="bg-slate-50 rounded-xl p-3.5"><p class="text-slate-400 font-medium">${label}</p><p class="text-base font-bold text-slate-900 mt-0.5 tabular">${val}</p>${sub ? `<p class="text-slate-400 mt-0.5 tabular">${sub}</p>` : ""}</div>`;
+  const dayLabel = k => { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d).toLocaleDateString("id-ID", { weekday: "short", day: "numeric", month: "short" }); };
+  body.innerHTML = `
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      ${tile("Omzet", rp(omzet))}
+      ${tile("Jumlah transaksi", n)}
+      ${tile("Rata-rata per transaksi", rp(omzet / n))}
+      ${tile("Tunai / QRIS", rp(tunai), "QRIS " + rp(qris))}
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-5">
+      <div>
+        <h4 class="font-semibold text-slate-700 mb-2">Penjualan per hari</h4>
+        <div class="space-y-1.5">
+          ${dayList.map(([k, v]) => `<div class="flex items-center gap-2">
+            <span class="w-24 shrink-0 text-slate-500">${esc(dayLabel(k))}</span>
+            <div class="flex-grow min-w-0 h-4 bg-slate-100 rounded"><div class="h-4 rounded bg-indigo-500" style="width:${(v.total / maxDay * 100).toFixed(1)}%"></div></div>
+            <span class="w-28 shrink-0 text-right font-semibold tabular text-slate-700">${rp(v.total)}</span>
+          </div>`).join("")}
+        </div>
+      </div>
+      <div>
+        <h4 class="font-semibold text-slate-700 mb-2">Produk terlaris</h4>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left">
+            <thead><tr class="text-slate-400"><th class="py-1.5 pr-2 font-medium">Produk</th><th class="py-1.5 px-2 font-medium text-right">Terjual</th><th class="py-1.5 pl-2 font-medium text-right">Nilai</th></tr></thead>
+            <tbody class="divide-y divide-slate-100">
+              ${top.map(p => `<tr><td class="py-1.5 pr-2 text-slate-700">${esc(p.name)}</td><td class="py-1.5 px-2 text-right tabular">${p.qty}</td><td class="py-1.5 pl-2 text-right tabular">${rp(p.total)}</td></tr>`).join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    ${truncated ? `<p class="text-amber-600 mt-3">Menampilkan 2.000 transaksi terbaru pada periode ini.</p>` : ""}`;
+}
+
 /* ---------- Navigasi ---------- */
 function switchRole(role) {
+  if (role === "admin" && myRole !== "owner") role = "kasir";
   currentRole = role;
   ["kasir", "gudang", "admin"].forEach(r => {
     $("view-" + r).classList.toggle("hidden", r !== role);
@@ -1815,7 +2011,7 @@ function switchRole(role) {
   });
   if (role === "kasir") { renderCategories(); renderPOSProducts(); renderCart(); }
   if (role === "gudang") renderGudangTable();
-  if (role === "admin") { renderSettings(); renderAdmin(); }
+  if (role === "admin") { renderSettings(); renderAdmin(); renderRoles(); loadReport(); }
 }
 
 /* ---------- KASIR ---------- */
@@ -1900,6 +2096,7 @@ function openPayment(method) {
   if (!Object.keys(cart).length) { toast("Pilih barang dulu"); return; }
   $("pay-total").textContent = rp(totals().total);
   $("cash-input").value = "";
+  $("pay-customer").value = ""; $("pay-note").value = "";
   setPayMethod(method);
   show("pay-modal");
   if (method === "Tunai") setTimeout(() => $("cash-input").focus(), 50);
@@ -2025,7 +2222,10 @@ function finalize(method, paid) {
     const p = findP(sku);
     return { sku, name: p.name, price: p.price, qty: q };
   });
-  const trx = { id: no, ts: now, items, subtotal: t.subtotal, tax: t.tax, total: t.total, method, paid, change: paid - t.total };
+  const trx = {
+    id: no, ts: now, items, subtotal: t.subtotal, tax: t.tax, total: t.total, method, paid, change: paid - t.total,
+    cashier: myEmail.split("@")[0].slice(0, 20), customer: $("pay-customer").value.trim(), note: $("pay-note").value.trim()
+  };
   // Stok dikurangi di server secara atomik, jadi dua kasir yang menjual barang sama tidak saling menimpa
   DB.sale(trx).catch(ex => toast("Transaksi " + no + " gagal tersimpan: " + dbMsg(ex)));
   cart = {};
@@ -2043,6 +2243,8 @@ function receiptHTML(trx) {
     <hr>
     <div class="row"><span>No</span><span>${esc(trx.id)}</span></div>
     <div class="row"><span>Waktu</span><span>${esc(fmtTime(trx.ts))}</span></div>
+    ${trx.cashier ? `<div class="row"><span>Kasir</span><span>${esc(trx.cashier)}</span></div>` : ""}
+    ${trx.customer ? `<div class="row"><span>Pelanggan</span><span>${esc(trx.customer)}</span></div>` : ""}
     <hr>
     ${lines}
     <hr>
@@ -2053,6 +2255,7 @@ function receiptHTML(trx) {
     <div class="row"><span>Metode</span><span>${esc(trx.method)}</span></div>
     <div class="row"><span>Dibayar</span><span>${rp(trx.paid)}</span></div>
     <div class="row"><span>Kembali</span><span>${rp(trx.change)}</span></div>
+    ${trx.note ? `<hr><div>Catatan: ${esc(trx.note)}</div>` : ""}
     <hr>
     <div class="c">Terima kasih<br>Barang yang sudah dibeli<br>tidak dapat ditukar</div>
   </div>`;
@@ -2086,6 +2289,8 @@ function receiptLines(trx, measure, maxW) {
   L.push({ k: "hr" });
   L.push({ k: "lr", a: "No", b: trx.id });
   L.push({ k: "lr", a: "Waktu", b: fmtTime(trx.ts) });
+  if (trx.cashier) L.push({ k: "lr", a: "Kasir", b: trx.cashier });
+  if (trx.customer) wrapText(measure, "Pelanggan: " + trx.customer, maxW).forEach(t => L.push({ k: "l", t }));
   L.push({ k: "hr" });
   trx.items.forEach(i => {
     wrapText(measure, i.name, maxW).forEach(t => L.push({ k: "l", t }));
@@ -2099,6 +2304,10 @@ function receiptLines(trx, measure, maxW) {
   L.push({ k: "lr", a: "Metode", b: trx.method });
   L.push({ k: "lr", a: "Dibayar", b: rp(trx.paid) });
   L.push({ k: "lr", a: "Kembali", b: rp(trx.change) });
+  if (trx.note) {
+    L.push({ k: "hr" });
+    wrapText(measure, "Catatan: " + trx.note, maxW).forEach(t => L.push({ k: "l", t }));
+  }
   L.push({ k: "hr" });
   L.push({ k: "c", t: "Terima kasih" });
   return L;
@@ -2352,7 +2561,7 @@ if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0) {
 }
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") ["pay-modal", "receipt-modal", "stock-modal", "scanner-modal", "product-modal"].forEach(hide);
-  if (e.key === "Enter" && !$("pay-modal").classList.contains("hidden") && payMethod === "Tunai" && !$("cash-pay-btn").disabled) confirmCash();
+  if (e.key === "Enter" && !$("pay-modal").classList.contains("hidden") && payMethod === "Tunai" && e.target && e.target.id === "cash-input" && !$("cash-pay-btn").disabled) confirmCash();
 });
 </script>
 
@@ -2360,7 +2569,7 @@ document.addEventListener("keydown", e => {
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js";
-import { initializeFirestore, getFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, onSnapshot, query, orderBy, limit, writeBatch, increment, getDocs } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
+import { initializeFirestore, getFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, onSnapshot, query, orderBy, limit, writeBatch, increment, getDocs, where, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyD97UkolBFN-x27qR-OKQr4ApTOHcDQvjo",
@@ -2435,6 +2644,30 @@ window.DB = {
     return b.commit();
   },
 
+  // Peran disimpan di settings/roles: { owners: [email], kasir: [email] }
+  claimOwner(email) {
+    const b = writeBatch(db);
+    b.set(doc(db, "settings", "roles"), { owners: [email], kasir: [] });
+    return b.commit();
+  },
+  addRole(role, email) {
+    const b = writeBatch(db);
+    b.update(doc(db, "settings", "roles"), { [role === "owner" ? "owners" : "kasir"]: arrayUnion(email) });
+    return b.commit();
+  },
+  removeRole(role, email) {
+    const b = writeBatch(db);
+    b.update(doc(db, "settings", "roles"), { [role === "owner" ? "owners" : "kasir"]: arrayRemove(email) });
+    return b.commit();
+  },
+
+  // Untuk laporan: semua transaksi sejak waktu tertentu (maksimal 2000)
+  async fetchTransactions(since) {
+    const CAP = 2000;
+    const s = await getDocs(query(col("transactions"), where("ts", ">=", since), orderBy("ts", "desc"), limit(CAP)));
+    return { rows: s.docs.map(d => d.data()), truncated: s.docs.length >= CAP };
+  },
+
   async clearTransactions() {
     const snap = await getDocs(col("transactions"));
     const refs = snap.docs.map(d => d.ref);
@@ -2447,15 +2680,16 @@ window.DB = {
   }
 };
 
-let unsubs = [];
-function stop() { unsubs.forEach(u => u()); unsubs = []; }
+let unsubs = [], rolesUnsub = null, dataOn = false;
+function stopData() { unsubs.forEach(u => u()); unsubs = []; dataOn = false; }
+function stopAll() { stopData(); if (rolesUnsub) { rolesUnsub(); rolesUnsub = null; } }
 function listen(ref, kind, map) {
   unsubs.push(onSnapshot(ref,
     snap => window.onDBData(kind, map(snap), snap.metadata.hasPendingWrites),
     err => window.onDBError(err)));
 }
 function start() {
-  stop();
+  stopData(); dataOn = true;
   listen(col("products"), "products", s => s.docs
     .map(d => ({ ...d.data(), sku: d.data().sku || d.id }))
     .sort((a, b) => String(a.name).localeCompare(String(b.name), "id")));
@@ -2464,8 +2698,24 @@ function start() {
   listen(doc(db, "settings", "store"), "settings", s => s.exists() ? s.data() : {});
 }
 
+// Data toko baru dibaca setelah peran pengguna diketahui, supaya akun tanpa akses tidak memicu error
+function watchRoles(user) {
+  stopAll();
+  const email = (user.email || "").toLowerCase();
+  rolesUnsub = onSnapshot(doc(db, "settings", "roles"), snap => {
+    if (!snap.exists()) { stopData(); window.onRole({ state: "unset", email }); return; }
+    const d = snap.data();
+    const norm = a => (Array.isArray(a) ? a : []).map(x => String(x).toLowerCase());
+    const owners = norm(d.owners), kasir = norm(d.kasir);
+    const role = owners.includes(email) ? "owner" : kasir.includes(email) ? "kasir" : null;
+    window.onRole({ state: role ? "ok" : "none", role, email, owners, kasir });
+    if (role && !dataOn) start();
+    if (!role && dataOn) stopData();
+  }, err => window.onDBError(err));
+}
+
 onAuthStateChanged(auth, user => {
-  if (user) start(); else stop();
+  if (user) watchRoles(user); else stopAll();
   window.onAuthChange(user ? { email: user.email } : null);
 });
 </script>
