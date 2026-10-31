@@ -2707,8 +2707,8 @@ function compressImage(file) {
     const url = URL.createObjectURL(file), img = new Image();
     img.onload = () => {
       URL.revokeObjectURL(url);
-      const MAX_CHARS = 220000;
-      for (const dim of [1000, 800, 640, 480]) {
+    const MAX_CHARS = 90000;
+      for (const dim of [640, 480, 400, 320]) {
         const s = Math.min(1, dim / Math.max(img.width, img.height));
         const c = document.createElement("canvas");
         c.width = Math.max(1, Math.round(img.width * s)); c.height = Math.max(1, Math.round(img.height * s));
